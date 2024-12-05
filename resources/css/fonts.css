@@ -1,0 +1,6 @@
+@font-face {
+    font-family: 'CustomFont';
+    src: url("/assets/fonts/Gilmer-Light-Trial.woff") format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
