@@ -201,7 +201,7 @@ export default function AuthenticatedLayout({ header, children, window }: Props)
                 </Drawer>
             </nav>
             {header && (
-                <header className="tw-bg-white tw-shadow tw-mt-20">
+                <header className="tw-bg-white tw-shadow tw-mt-20 tw-relative" style={{ zIndex: 1 }}>
                     <div className="tw-mx-auto tw-max-w-7xl tw-px-3 tw-py-3 sm:tw-px-6 lg:tw-px-8">
                         {header}
                     </div>

@@ -18,13 +18,23 @@ export default function Dashboard() {
         <AuthenticatedLayout
             header={
                 <h2 className="tw-text-xl tw-font-semibold tw-leading-tight tw-text-gray-800">
-                    Dashboard
+                    The Whole in One
                 </h2>
             }
         >
             <Head title="Dashboard" />
-
-            <div className="tw-py-12">
+            <div
+                className="tw-absolute tw-left-0 tw-top-20 tw-w-full"
+                style={{
+                    backgroundImage: 'url(/assets/image/home/background.jpg)',
+                    height: 'calc(100vh - 80px)',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: 'cover',
+                    filter: 'blur(6px)',
+                }}
+            />
+            <div className="tw-py-12 tw-relative">
                 <div className="tw-mx-auto tw-max-w-7xl sm:tw-px-6 lg:tw-px-8">
                     <div className="tw-overflow-hidden tw-bg-white tw-shadow-sm sm:tw-rounded-lg">
                         <Tabs

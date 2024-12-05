@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import {
-    FormControlLabel,
-    FormGroup,
-    FormControl,
     TextField,
     CircularProgress,
     Autocomplete
 } from "@mui/material";
 import Grid from '@mui/material/Grid2';
+import { useForm } from "@inertiajs/react";
 
 interface Film {
     title: string;
@@ -26,6 +24,13 @@ export const ReturnForm = (props:any) => {
     const [open, setOpen] = React.useState(false);
     const [options, setOptions] = React.useState<readonly Film[]>([]);
     const [loading, setLoading] = React.useState(false);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        originLocationCode: '',
+        destinationLocationCode: '',
+        departureDate: '',
+        adults: 1,
+
+    });
 
     const handleOpen = () => {
         setOpen(true);
@@ -43,125 +48,131 @@ export const ReturnForm = (props:any) => {
         setOptions([]);
     };
 
+    const submit = async () => {
+
+    }
+
     return (
-        <Grid container spacing={2}>
-            <Grid size={3}>
-                <Autocomplete
-                    fullWidth
-                    open={open}
-                    onOpen={handleOpen}
-                    onClose={handleClose}
-                    isOptionEqualToValue={(option, value) => option.title === value.title}
-                    getOptionLabel={(option) => option.title}
-                    options={options}
-                    loading={loading}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Return"
-                            slotProps={{
-                                input: {
-                                    ...params.InputProps,
-                                    endAdornment: (
-                                        <React.Fragment>
-                                            {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                            {params.InputProps.endAdornment}
-                                        </React.Fragment>
-                                    ),
-                                },
-                            }}
-                        />
-                    )}
-                />
+        <form onSubmit={submit}>
+            <Grid container spacing={2}>
+                <Grid size={3}>
+                    <Autocomplete
+                        fullWidth
+                        open={open}
+                        onOpen={handleOpen}
+                        onClose={handleClose}
+                        isOptionEqualToValue={(option, value) => option.title === value.title}
+                        getOptionLabel={(option) => option.title}
+                        options={options}
+                        loading={loading}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Return"
+                                slotProps={{
+                                    input: {
+                                        ...params.InputProps,
+                                        endAdornment: (
+                                            <React.Fragment>
+                                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                                {params.InputProps.endAdornment}
+                                            </React.Fragment>
+                                        ),
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                </Grid>
+                <Grid size={3}>
+                    <Autocomplete
+                        fullWidth
+                        open={open}
+                        onOpen={handleOpen}
+                        onClose={handleClose}
+                        isOptionEqualToValue={(option, value) => option.title === value.title}
+                        getOptionLabel={(option) => option.title}
+                        options={options}
+                        loading={loading}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Return"
+                                slotProps={{
+                                    input: {
+                                        ...params.InputProps,
+                                        endAdornment: (
+                                            <React.Fragment>
+                                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                                {params.InputProps.endAdornment}
+                                            </React.Fragment>
+                                        ),
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                </Grid>
+                <Grid size={3}>
+                    <Autocomplete
+                        fullWidth
+                        open={open}
+                        onOpen={handleOpen}
+                        onClose={handleClose}
+                        isOptionEqualToValue={(option, value) => option.title === value.title}
+                        getOptionLabel={(option) => option.title}
+                        options={options}
+                        loading={loading}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Return"
+                                slotProps={{
+                                    input: {
+                                        ...params.InputProps,
+                                        endAdornment: (
+                                            <React.Fragment>
+                                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                                {params.InputProps.endAdornment}
+                                            </React.Fragment>
+                                        ),
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                </Grid>
+                <Grid size={3}>
+                    <Autocomplete
+                        fullWidth
+                        open={open}
+                        onOpen={handleOpen}
+                        onClose={handleClose}
+                        isOptionEqualToValue={(option, value) => option.title === value.title}
+                        getOptionLabel={(option) => option.title}
+                        options={options}
+                        loading={loading}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Return"
+                                slotProps={{
+                                    input: {
+                                        ...params.InputProps,
+                                        endAdornment: (
+                                            <React.Fragment>
+                                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                                {params.InputProps.endAdornment}
+                                            </React.Fragment>
+                                        ),
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                </Grid>
             </Grid>
-            <Grid size={3}>
-                <Autocomplete
-                    fullWidth
-                    open={open}
-                    onOpen={handleOpen}
-                    onClose={handleClose}
-                    isOptionEqualToValue={(option, value) => option.title === value.title}
-                    getOptionLabel={(option) => option.title}
-                    options={options}
-                    loading={loading}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Return"
-                            slotProps={{
-                                input: {
-                                    ...params.InputProps,
-                                    endAdornment: (
-                                        <React.Fragment>
-                                            {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                            {params.InputProps.endAdornment}
-                                        </React.Fragment>
-                                    ),
-                                },
-                            }}
-                        />
-                    )}
-                />
-            </Grid>
-            <Grid size={3}>
-                <Autocomplete
-                    fullWidth
-                    open={open}
-                    onOpen={handleOpen}
-                    onClose={handleClose}
-                    isOptionEqualToValue={(option, value) => option.title === value.title}
-                    getOptionLabel={(option) => option.title}
-                    options={options}
-                    loading={loading}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Return"
-                            slotProps={{
-                                input: {
-                                    ...params.InputProps,
-                                    endAdornment: (
-                                        <React.Fragment>
-                                            {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                            {params.InputProps.endAdornment}
-                                        </React.Fragment>
-                                    ),
-                                },
-                            }}
-                        />
-                    )}
-                />
-            </Grid>
-            <Grid size={3}>
-                <Autocomplete
-                    fullWidth
-                    open={open}
-                    onOpen={handleOpen}
-                    onClose={handleClose}
-                    isOptionEqualToValue={(option, value) => option.title === value.title}
-                    getOptionLabel={(option) => option.title}
-                    options={options}
-                    loading={loading}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Return"
-                            slotProps={{
-                                input: {
-                                    ...params.InputProps,
-                                    endAdornment: (
-                                        <React.Fragment>
-                                            {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                            {params.InputProps.endAdornment}
-                                        </React.Fragment>
-                                    ),
-                                },
-                            }}
-                        />
-                    )}
-                />
-            </Grid>
-        </Grid>
+        </form>
     )
 };
 
