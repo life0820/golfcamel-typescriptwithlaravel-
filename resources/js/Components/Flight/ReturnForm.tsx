@@ -1,52 +1,115 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     TextField,
     CircularProgress,
-    Autocomplete
+    Autocomplete, Box,
+    Typography
 } from "@mui/material";
 import Grid from '@mui/material/Grid2';
 import { useForm } from "@inertiajs/react";
+import { useGetAirportsQuery } from "@/toolkit/services/flight";
+import FlightIcon from '@mui/icons-material/Flight';
+import parse from 'autosuggest-highlight/parse';
+import { debounce } from '@mui/material/utils';
 
-interface Film {
-    title: string;
-    year: number;
+// This key was created specifically for the demo in mui.com.
+// You need to create a new one for your application.
+const GOOGLE_MAPS_API_KEY = 'AIzaSyC3aviU6KHXAjoSnxcw6qbOhjnFctbxPkE';
+function loadScript(src: string, position: HTMLElement | null, id: string) {
+    if (!position) {
+        return;
+    }
+
+    const script = document.createElement('script');
+    script.setAttribute('async', '');
+    script.setAttribute('id', id);
+    script.src = src;
+    position.appendChild(script);
 }
 
-function sleep(duration: number): Promise<void> {
-    return new Promise<void>((resolve) => {
-        setTimeout(() => {
-            resolve();
-        }, duration);
-    });
+const autocompleteService = { current: null };
+interface MainTextMatchedSubstrings {
+    offset: number;
+    length: number;
 }
-
+interface StructuredFormatting {
+    main_text: string;
+    secondary_text: string;
+    main_text_matched_substrings?: readonly MainTextMatchedSubstrings[];
+}
+interface PlaceType {
+    description: string;
+    structured_formatting: StructuredFormatting;
+}
 export const ReturnForm = (props:any) => {
+    const [value, setValue] = React.useState<PlaceType | null>(null);
+    const [keyword, setKeyword] = useState<string>('');
+    const loaded = React.useRef(false);
     const [open, setOpen] = React.useState(false);
-    const [options, setOptions] = React.useState<readonly Film[]>([]);
-    const [loading, setLoading] = React.useState(false);
-    const { data, setData, post, processing, errors, reset } = useForm({
-        originLocationCode: '',
-        destinationLocationCode: '',
-        departureDate: '',
-        adults: 1,
+    const [start, setStart] = useState(false);
+    const [options, setOptions] = React.useState<readonly any[]>([]);   // airport or city option lists
+    // const { data, setData, post, processing, errors, reset } = useForm({
+    //     originLocationCode: '',
+    //     destinationLocationCode: '',
+    //     departureDate: '',
+    //     adults: 1,
+    //
+    // });
 
-    });
+    const {data, error, isLoading, isFetching} = useGetAirportsQuery(keyword, { skip: !keyword, refetchOnMountOrArgChange: true });
+    // const [loading, setLoading] = React.useState(isLoading);
+    useEffect(() => {
+        if(data) {
+            const formattedOptions = data.map((location: any) => ({
+                label: `${location.name} (${location.iataCode}) - ${location.subType}`,
+                value: location.iataCode,
+            }));
+            setOptions(formattedOptions);
+            setStart(false);
+        }
+    }, [data])
 
-    const handleOpen = () => {
-        setOpen(true);
-        (async () => {
-            setLoading(true);
-            await sleep(1e3); // For demo purposes.
-            setLoading(false);
+    const fetch = React.useMemo(
+        () =>
+            debounce(
+                (
+                    request: { input: string },
+                    callback: (results?: readonly PlaceType[]) => void,
+                ) => {
+                    setStart(true);
+                },
+                500,
+            ),
+        [],
+    );
 
-            setOptions([...topFilms]);
-        })();
-    };
+    useEffect(() => {
+        let active = true;
+        if (keyword === '') {
+            setOptions(value ? [value] : []);
+            return undefined;
+        }
 
-    const handleClose = () => {
-        setOpen(false);
-        setOptions([]);
-    };
+        fetch({ input: keyword }, (results?: readonly PlaceType[]) => {
+            if (active) {
+                let newOptions: readonly PlaceType[] = [];
+
+                if (value) {
+                    newOptions = [value];
+                }
+
+                if (results) {
+                    newOptions = [...newOptions, ...results];
+                }
+
+                setOptions(newOptions);
+            }
+        });
+
+        return () => {
+            active = false;
+        };
+    }, [value, keyword, fetch]);
 
     const submit = async () => {
 
@@ -58,23 +121,35 @@ export const ReturnForm = (props:any) => {
                 <Grid size={3}>
                     <Autocomplete
                         fullWidth
-                        open={open}
-                        onOpen={handleOpen}
-                        onClose={handleClose}
-                        isOptionEqualToValue={(option, value) => option.title === value.title}
-                        getOptionLabel={(option) => option.title}
+                        getOptionLabel={(option) =>
+                            typeof option === 'string' ? option : option.label
+                        }
+                        filterOptions={(x) => x}
                         options={options}
-                        loading={loading}
+                        loading={isFetching}
+                        autoComplete
+                        includeInputInList
+                        filterSelectedOptions
+                        value={value}
+                        noOptionsText="No locations"
+                        onChange={(event: any, newValue: PlaceType | null) => {
+                            setOptions(newValue ? [newValue, ...options] : options);
+                            setValue(newValue);
+                        }}
+                        onInputChange={(event, newInputValue) => {
+                            setKeyword(newInputValue);
+                        }}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
                                 label="Return"
+                                fullWidth
                                 slotProps={{
                                     input: {
                                         ...params.InputProps,
                                         endAdornment: (
                                             <React.Fragment>
-                                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                                {isFetching ? <CircularProgress color="inherit" size={20} /> : null}
                                                 {params.InputProps.endAdornment}
                                             </React.Fragment>
                                         ),
@@ -82,147 +157,29 @@ export const ReturnForm = (props:any) => {
                                 }}
                             />
                         )}
-                    />
-                </Grid>
-                <Grid size={3}>
-                    <Autocomplete
-                        fullWidth
-                        open={open}
-                        onOpen={handleOpen}
-                        onClose={handleClose}
-                        isOptionEqualToValue={(option, value) => option.title === value.title}
-                        getOptionLabel={(option) => option.title}
-                        options={options}
-                        loading={loading}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Return"
-                                slotProps={{
-                                    input: {
-                                        ...params.InputProps,
-                                        endAdornment: (
-                                            <React.Fragment>
-                                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                                {params.InputProps.endAdornment}
-                                            </React.Fragment>
-                                        ),
-                                    },
-                                }}
-                            />
-                        )}
-                    />
-                </Grid>
-                <Grid size={3}>
-                    <Autocomplete
-                        fullWidth
-                        open={open}
-                        onOpen={handleOpen}
-                        onClose={handleClose}
-                        isOptionEqualToValue={(option, value) => option.title === value.title}
-                        getOptionLabel={(option) => option.title}
-                        options={options}
-                        loading={loading}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Return"
-                                slotProps={{
-                                    input: {
-                                        ...params.InputProps,
-                                        endAdornment: (
-                                            <React.Fragment>
-                                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                                {params.InputProps.endAdornment}
-                                            </React.Fragment>
-                                        ),
-                                    },
-                                }}
-                            />
-                        )}
-                    />
-                </Grid>
-                <Grid size={3}>
-                    <Autocomplete
-                        fullWidth
-                        open={open}
-                        onOpen={handleOpen}
-                        onClose={handleClose}
-                        isOptionEqualToValue={(option, value) => option.title === value.title}
-                        getOptionLabel={(option) => option.title}
-                        options={options}
-                        loading={loading}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Return"
-                                slotProps={{
-                                    input: {
-                                        ...params.InputProps,
-                                        endAdornment: (
-                                            <React.Fragment>
-                                                {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                                {params.InputProps.endAdornment}
-                                            </React.Fragment>
-                                        ),
-                                    },
-                                }}
-                            />
-                        )}
+                        renderOption={(props, option) => {
+                            const { key, ...optionProps } = props;
+                            return (
+                                <li key={key} {...optionProps}>
+                                    <Grid container sx={{ alignItems: 'center' }}>
+                                        <Grid sx={{ display: 'flex', width: 44 }}>
+                                            <FlightIcon sx={{ color: 'text.secondary' }} />
+                                        </Grid>
+                                        <Grid sx={{ width: 'calc(100% - 44px)', wordWrap: 'break-word' }}>
+                                            <Box
+                                                component="span"
+                                                sx={{ fontWeight: 'bold' }}
+                                            >
+                                                {option.label}
+                                            </Box>
+                                        </Grid>
+                                    </Grid>
+                                </li>
+                            );
+                        }}
                     />
                 </Grid>
             </Grid>
         </form>
     )
 };
-
-// Top films as rated by IMDb users. http://www.imdb.com/chart/top
-const topFilms = [
-    { title: 'The Shawshank Redemption', year: 1994 },
-    { title: 'The Godfather', year: 1972 },
-    { title: 'The Godfather: Part II', year: 1974 },
-    { title: 'The Dark Knight', year: 2008 },
-    { title: '12 Angry Men', year: 1957 },
-    { title: "Schindler's List", year: 1993 },
-    { title: 'Pulp Fiction', year: 1994 },
-    {
-        title: 'The Lord of the Rings: The Return of the King',
-        year: 2003,
-    },
-    { title: 'The Good, the Bad and the Ugly', year: 1966 },
-    { title: 'Fight Club', year: 1999 },
-    {
-        title: 'The Lord of the Rings: The Fellowship of the Ring',
-        year: 2001,
-    },
-    {
-        title: 'Star Wars: Episode V - The Empire Strikes Back',
-        year: 1980,
-    },
-    { title: 'Forrest Gump', year: 1994 },
-    { title: 'Inception', year: 2010 },
-    {
-        title: 'The Lord of the Rings: The Two Towers',
-        year: 2002,
-    },
-    { title: "One Flew Over the Cuckoo's Nest", year: 1975 },
-    { title: 'Goodfellas', year: 1990 },
-    { title: 'The Matrix', year: 1999 },
-    { title: 'Seven Samurai', year: 1954 },
-    {
-        title: 'Star Wars: Episode IV - A New Hope',
-        year: 1977,
-    },
-    { title: 'City of God', year: 2002 },
-    { title: 'Se7en', year: 1995 },
-    { title: 'The Silence of the Lambs', year: 1991 },
-    { title: "It's a Wonderful Life", year: 1946 },
-    { title: 'Life Is Beautiful', year: 1997 },
-    { title: 'The Usual Suspects', year: 1995 },
-    { title: 'Léon: The Professional', year: 1994 },
-    { title: 'Spirited Away', year: 2001 },
-    { title: 'Saving Private Ryan', year: 1998 },
-    { title: 'Once Upon a Time in the West', year: 1968 },
-    { title: 'American History X', year: 1998 },
-    { title: 'Interstellar', year: 2014 },
-];

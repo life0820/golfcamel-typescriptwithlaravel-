@@ -9,6 +9,5 @@ export const theme = {
     },
     typography: {
         fontFamily: "CustomFont, sans-serif"
-    }
-
+    },
 }

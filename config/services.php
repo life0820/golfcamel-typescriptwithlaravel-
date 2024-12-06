@@ -24,6 +24,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'amadeus' => [
+        'client_id' => env('AMADEUS_API_KEY'),
+        'client_secret' => env('AMADEUS_API_SECRET'),
+        'base_url' => env('AMADEUS_BASE_URL'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_KEY'),
     ],
