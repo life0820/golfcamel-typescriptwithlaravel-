@@ -10,6 +10,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
 import moment from "moment";
+import {DatePicker} from "@/Components/DatePicker";
 
 interface IPassenger {
     adults: number;
@@ -26,7 +27,7 @@ interface IForm extends  IPassenger{
 }
 
 
-export const ReturnForm = (props:any) => {
+export const OnewayForm = (props:any) => {
     const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
     const { setData, post, processing, errors, reset, ...form } = useForm<IForm>({
         originLocationCode: '',
@@ -76,14 +77,11 @@ export const ReturnForm = (props:any) => {
         });
     };
 
-    const changeDateRange = (date: any) => {
-        if(date[0] && date[1]) {
-            setData({
-                ...form.data,
-                departureDate: moment(date[0]['$d']).format('YYYY-MM-DD'),
-                returnDate: moment(date[1]['$d']).format('YYYY-MM-DD'),
-            });
-        }
+    const changeDate = (date: any) => {
+        setData({
+            ...form.data,
+            departureDate: moment(date['$d']).format('YYYY-MM-DD')
+        })
     }
 
     const submit = async (event: any) => {
@@ -91,8 +89,6 @@ export const ReturnForm = (props:any) => {
         event.preventDefault();
     }
 
-    // @ts-ignore
-    // @ts-ignore
     return (
         <form onSubmit={submit}>
             <Grid container spacing={2} className="tw-mt-3">
@@ -115,7 +111,7 @@ export const ReturnForm = (props:any) => {
                     <AutoComplete value={form.data.destinationLocationCode} onChange={(newValue: any) => setData("destinationLocationCode", newValue.value)} />
                 </Grid>
                 <Grid size={3}>
-                    <DateRangePicker changeDateRange={changeDateRange} />
+                    <DatePicker changeDate={changeDate} />
                 </Grid>
                 <Grid size={2}>
                     <div>

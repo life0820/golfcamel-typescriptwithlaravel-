@@ -8,6 +8,9 @@ export const theme = {
         },
     },
     typography: {
-        fontFamily: "CustomFont, sans-serif"
+        fontFamily: "CustomFont, sans-serif",
+        button: {
+            textTransform: 'none',
+        }
     },
 }

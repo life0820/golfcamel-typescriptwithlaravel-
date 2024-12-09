@@ -3,7 +3,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import {Box, FormControl, Tab, Tabs, RadioGroup, FormControlLabel, Radio} from '@mui/material';
 import { FlightTakeoff, Bed, CarRental, SportsGolf } from '@mui/icons-material';
-import {ReturnForm} from "@/Components/Flight/ReturnForm";
+import { ReturnForm } from "@/Components/Flight/ReturnForm";
+import { OnewayForm } from "@/Components/Flight/OnewayForm";
+import { MulticityForm } from "@/Components/Flight/Multicity";
 
 export default function Dashboard() {
     const [value, setValue] = useState(0);
@@ -63,9 +65,9 @@ export default function Dashboard() {
                                 </RadioGroup>
                             </FormControl>
                             {
-                                type === "0" && (
+                                type === "0" ? (
                                     <ReturnForm />
-                                )
+                                ) : type === "1" ? <OnewayForm /> : <MulticityForm />
                             }
                         </Box>
                     </div>
