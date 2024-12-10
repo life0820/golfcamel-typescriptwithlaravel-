@@ -54,6 +54,8 @@ export const AutoComplete = (props:any) => {
             }}
             renderInput={(params) => (
                 <TextField
+                    name={props.name}
+                    error={!!props.error }
                     {...params}
                     label="Return"
                     fullWidth
@@ -68,6 +70,7 @@ export const AutoComplete = (props:any) => {
                             ),
                         },
                     }}
+                    helperText={props.error ? props.error : ''}
                 />
             )}
             renderOption={(props, option) => {

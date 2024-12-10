@@ -40,9 +40,22 @@ class AmadeusService
                 'Authorization' => 'Bearer ' . $this->accessToken,
             ],
             'query' => [
-                'subType' => 'AIRPORT,CITY',
+                'subType' => 'AIRPORT',
                 'keyword' => $keyword,
             ],
+        ]);
+
+        return json_decode($response->getBody()->getContents(), true);
+    }
+
+    public function searchFlights($data)
+    {
+        // Search flights
+        $response = $this->client->get('/v2/shopping/flight-offers', [
+            'headers' => [
+                'Authorization' => "Bearer " . $this->accessToken,
+            ],
+            'query' => $data,
         ]);
 
         return json_decode($response->getBody()->getContents(), true);

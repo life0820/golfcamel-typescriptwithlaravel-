@@ -28,9 +28,12 @@
     "dependencies": {
         "@emotion/react": "^11.13.5",
         "@emotion/styled": "^11.13.5",
+        "@inertiajs/inertia": "^0.11.1",
+        "@inertiajs/inertia-react": "^0.8.1",
         "@mui/icons-material": "^6.1.9",
         "@mui/material": "^6.1.9",
         "@mui/styled-engine-sc": "^6.1.9",
+        "@mui/styles": "^6.1.10",
         "@mui/x-date-pickers": "^7.23.1",
         "@mui/x-date-pickers-pro": "^7.23.1",
         "@reduxjs/toolkit": "^2.4.0",

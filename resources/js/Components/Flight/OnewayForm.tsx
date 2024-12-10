@@ -11,6 +11,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
 import moment from "moment";
 import {DatePicker} from "@/Components/DatePicker";
+import {Inertia} from "@inertiajs/inertia";
 
 interface IPassenger {
     adults: number;
@@ -45,6 +46,15 @@ export const OnewayForm = (props:any) => {
         infants: 0,
         travelClass: "ECONOMY"
     });
+
+    useEffect(() => {
+        if(props && Object.keys(props).length > 0) {
+            setData({
+                ...form.data,
+                ...props
+            });
+        }
+    }, [props]);
 
     useEffect(() => {
         if(passenger.infants > (passenger.adults - 1)) setPassenger({ ...passenger, infants: passenger.adults});
@@ -85,8 +95,9 @@ export const OnewayForm = (props:any) => {
     }
 
     const submit = async (event: any) => {
-        console.log(form.data);
         event.preventDefault();
+        // Use Inertia to navigate with query parameters
+        Inertia.get('/flight/result', { ...form.data, type: "1" });
     }
 
     return (
@@ -111,14 +122,14 @@ export const OnewayForm = (props:any) => {
                     <AutoComplete value={form.data.destinationLocationCode} onChange={(newValue: any) => setData("destinationLocationCode", newValue.value)} />
                 </Grid>
                 <Grid size={3}>
-                    <DatePicker changeDate={changeDate} />
+                    <DatePicker value={form.data.departureDate} changeDate={changeDate} />
                 </Grid>
                 <Grid size={2}>
                     <div>
                         <TextField
                             id="filled-read-only-input"
                             label="Passenger/Class"
-                            value={`${(form.data.adults + form.data.children + form.data.infants)} Travellers / ${form.data.travelClass}`}
+                            value={`${(form.data.adults * 1 + form.data.children * 1 + form.data.infants * 1)} Travellers / ${form.data.travelClass}`}
                             variant="filled"
                             slotProps={{
                                 input: {

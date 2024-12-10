@@ -1,5 +1,18 @@
 import React, {useEffect} from 'react';
-import {Button, Card, Popover, TextField, Typography, CardContent, CardActions, CardHeader, FormControlLabel, RadioGroup, Radio} from "@mui/material";
+import {
+    Button,
+    Card,
+    Popover,
+    TextField,
+    Typography,
+    CardContent,
+    CardActions,
+    CardHeader,
+    FormControlLabel,
+    RadioGroup,
+    Radio,
+    FormControl
+} from "@mui/material";
 import Grid from '@mui/material/Grid2';
 import {useForm} from "@inertiajs/react";
 import { AutoComplete } from '@/Components/AutoComplete';
@@ -10,6 +23,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
 import moment from "moment";
+import { Inertia } from '@inertiajs/inertia';
 
 interface IPassenger {
     adults: number;
@@ -44,6 +58,18 @@ export const ReturnForm = (props:any) => {
         infants: 0,
         travelClass: "ECONOMY"
     });
+
+    useEffect(() => {
+        if(props && Object.keys(props).length > 0) {
+            setData({
+                ...form.data,
+                ...props,
+                adults: props.adults * 1,
+                children: props.children * 1,
+                infants: props.infants * 1,
+            });
+        }
+    }, [props]);
 
     useEffect(() => {
         if(passenger.infants > (passenger.adults - 1)) setPassenger({ ...passenger, infants: passenger.adults});
@@ -87,17 +113,22 @@ export const ReturnForm = (props:any) => {
     }
 
     const submit = async (event: any) => {
-        console.log(form.data);
         event.preventDefault();
+        // Use Inertia to navigate with query parameters
+        Inertia.get('/flight/result', { ...form.data, type: "0" });
     }
 
-    // @ts-ignore
     // @ts-ignore
     return (
         <form onSubmit={submit}>
             <Grid container spacing={2} className="tw-mt-3">
                 <Grid size={2.5}>
-                    <AutoComplete value={form.data.originLocationCode} onChange={(newValue: any) => setData("originLocationCode", newValue.value)} />
+                    <AutoComplete
+                        error={errors ? errors.originLocationCode : ''}
+                        name="originLocationCode"
+                        value={form.data.originLocationCode}
+                        onChange={(newValue: any) => setData("originLocationCode", newValue.value)}
+                    />
                 </Grid>
                 <Grid size={"auto"}>
                     <Button
@@ -112,17 +143,22 @@ export const ReturnForm = (props:any) => {
                     </Button>
                 </Grid>
                 <Grid size={2.5}>
-                    <AutoComplete value={form.data.destinationLocationCode} onChange={(newValue: any) => setData("destinationLocationCode", newValue.value)} />
+                    <AutoComplete
+                        error={errors ? errors.destinationLocationCode : ''}
+                        name="destinationLocationCode"
+                        value={form.data.destinationLocationCode}
+                        onChange={(newValue: any) => setData("destinationLocationCode", newValue.value)}
+                    />
                 </Grid>
                 <Grid size={3}>
-                    <DateRangePicker changeDateRange={changeDateRange} />
+                    <DateRangePicker departureDate={form.data.departureDate} returnDate={form.data.returnDate}  changeDateRange={changeDateRange} />
                 </Grid>
                 <Grid size={2}>
                     <div>
                         <TextField
                             id="filled-read-only-input"
                             label="Passenger/Class"
-                            value={`${(form.data.adults + form.data.children + form.data.infants)} Travellers / ${form.data.travelClass}`}
+                            value={`${(form.data.adults * 1 + form.data.children * 1 + form.data.infants * 1)} Travellers / ${form.data.travelClass}`}
                             variant="filled"
                             slotProps={{
                                 input: {
@@ -296,17 +332,19 @@ export const ReturnForm = (props:any) => {
                                     sx={{ paddingTop: '0px', borderBottom: '1px solid #c4c4c4', '& span': { fontSize: '18px!important' } }}
                                 />
                                 <CardContent>
-                                    <RadioGroup
-                                        value={passenger.travelClass}
-                                        name="travelClass"
-                                        onChange={(event: React.ChangeEvent, value: string) => setPassenger({ ...passenger, travelClass: value})}
-                                        sx={{ fontSize: '18px' }}
-                                    >
-                                        <FormControlLabel value="ECONOMY" control={<Radio />} label="ECONOMY" />
-                                        <FormControlLabel value="PREMIUN_ECONOMY" control={<Radio />} label="PREMIUM ECONOMY" />
-                                        <FormControlLabel value="BUSINESS" control={<Radio />} label="BUSINESS" />
-                                        <FormControlLabel value="FIRST" control={<Radio />} label="FIRST" />
-                                    </RadioGroup>
+                                    <FormControl>
+                                        <RadioGroup
+                                            value={passenger.travelClass}
+                                            name="travelClass"
+                                            onChange={(event: React.ChangeEvent, value: string) => setPassenger({ ...passenger, travelClass: value})}
+                                            sx={{ fontSize: '18px' }}
+                                        >
+                                            <FormControlLabel value="ECONOMY" control={<Radio />} label="ECONOMY" />
+                                            <FormControlLabel value="PREMIUN_ECONOMY" control={<Radio />} label="PREMIUM ECONOMY" />
+                                            <FormControlLabel value="BUSINESS" control={<Radio />} label="BUSINESS" />
+                                            <FormControlLabel value="FIRST" control={<Radio />} label="FIRST" />
+                                        </RadioGroup>
+                                    </FormControl>
                                 </CardContent>
                                 <CardActions>
                                     <Button

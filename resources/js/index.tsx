@@ -6,6 +6,7 @@ import { Provider } from 'react-redux';
 
 import {store} from "@/toolkit/store";
 
+// @ts-ignore
 const theme:Theme = createTheme(customTheme);
 
 const Main = (props:any) => {

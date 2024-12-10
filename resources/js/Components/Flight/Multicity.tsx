@@ -12,6 +12,7 @@ import moment from "moment";
 import {DatePicker} from "@/Components/DatePicker";
 
 import ClearIcon from '@mui/icons-material/Clear';
+import {Inertia} from "@inertiajs/inertia";
 
 interface IPassenger {
     adults: number;
@@ -68,6 +69,16 @@ export const MulticityForm = (props:any) => {
     });
 
     useEffect(() => {
+        if(props && Object.keys(props).length > 0) {
+            setData({
+                ...form.data,
+                ...props,
+                originDestinations: JSON.parse(props.originDestinations)
+            });
+        }
+    }, [props]);
+
+    useEffect(() => {
         if(passenger.infants > (passenger.adults - 1)) setPassenger({ ...passenger, infants: passenger.adults});
     }, [passenger.adults]);
 
@@ -122,8 +133,9 @@ export const MulticityForm = (props:any) => {
     }
 
     const submit = async (event: any) => {
-        console.log(form.data);
+        // Use Inertia to navigate with query parameters
         event.preventDefault();
+        Inertia.get('/flight/result', { ...form.data, originDestinations: JSON.stringify(form.data.originDestinations), type: "2" });
     }
 
     return (
@@ -158,7 +170,7 @@ export const MulticityForm = (props:any) => {
                                           onChange={(newValue: any) => onChangeOriginDestinationItem(index, 'destinationLocationCode', newValue.value)}/>
                         </Grid>
                         <Grid size={3}>
-                            <DatePicker changeDate={(newValue: any) => changeDate(index, newValue)}/>
+                            <DatePicker value={origonDestination.departureDateTimeRange.date} changeDate={(newValue: any) => changeDate(index, newValue)}/>
                         </Grid>
                         {
                             index !== 0 &&
@@ -187,7 +199,7 @@ export const MulticityForm = (props:any) => {
                                     <TextField
                                         id="filled-read-only-input"
                                         label="Passenger/Class"
-                                        value={`${(form.data.adults + form.data.children + form.data.infants)} Travellers / ${form.data.travelClass}`}
+                                        value={`${(form.data.adults * 1 + form.data.children * 1 + form.data.infants * 1)} Travellers / ${form.data.travelClass}`}
                                         variant="filled"
                                         slotProps={{
                                             input: {
