@@ -31,6 +31,7 @@
         "@inertiajs/inertia": "^0.11.1",
         "@inertiajs/inertia-react": "^0.8.1",
         "@mui/icons-material": "^6.1.9",
+        "@mui/lab": "^6.0.0-beta.18",
         "@mui/material": "^6.1.9",
         "@mui/styled-engine-sc": "^6.1.9",
         "@mui/styles": "^6.1.10",

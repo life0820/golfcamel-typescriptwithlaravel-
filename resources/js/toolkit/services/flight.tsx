@@ -27,9 +27,9 @@ export const flightApi = createApi({
                 body: patch
             })
         }),
-        getAirportDetails: builder.mutation({
+        getFlightOfferPrice: builder.mutation({
             query: ({ ...patch }) => ({
-                url: '/flight/get-airport-details',
+                url: '/flight/get-flight-offer-price',
                 method: 'POST',
                 body: patch
             })
@@ -40,5 +40,5 @@ export const flightApi = createApi({
 export const {
     useGetAirportsQuery,
     useGetFlightOffersMutation,
-    useGetAirportDetailsMutation,
+    useGetFlightOfferPriceMutation,
 } = flightApi;

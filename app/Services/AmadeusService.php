@@ -60,4 +60,17 @@ class AmadeusService
 
         return json_decode($response->getBody()->getContents(), true);
     }
+
+    public function getFlightOfferPrice($data)
+    {
+        $response = $this->client->post('/v1/shopping/flight-offers/pricing', [
+            'headers' => [
+                'Authorization' => "Bearer " . $this->accessToken,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => $data,
+        ]);
+
+        return json_decode($response->getBody()->getContents(), true);
+    }
 }

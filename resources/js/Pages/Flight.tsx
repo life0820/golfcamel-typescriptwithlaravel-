@@ -10,21 +10,46 @@ import {
     Typography,
     Card,
     Button,
-    Pagination, Drawer
+    Pagination, Drawer,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Accordion,
+    AccordionActions,
+    AccordionSummary,
+    AccordionDetails,
+    TextField,
+    InputLabel,
+    Select,
+    MenuItem,
 } from "@mui/material";
 import {ReturnForm} from "@/Components/Flight/ReturnForm";
 import {OnewayForm} from "@/Components/Flight/OnewayForm";
 import {MulticityForm} from "@/Components/Flight/Multicity";
 import { Skeleton } from "@/Components/Skeleton";
-import {useGetFlightOffersMutation, useGetAirportDetailsMutation} from "@/toolkit/services/flight";
+import {useGetFlightOffersMutation, useGetFlightOfferPriceMutation} from "@/toolkit/services/flight";
 import Grid from "@mui/material/Grid2";
+import LoadingButton from '@mui/lab/LoadingButton';
 import {Segment} from "@/Components/Flight/Segment";
 import moment from "moment";
+import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BackpackIcon from '@mui/icons-material/Backpack';
 import LuggageIcon from '@mui/icons-material/Luggage';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
+interface IPassengerPrice {
+    type: string;
+    size: number;
+    base: number;
+    total: number;
+}
 
 interface IPassenger {
     adults: number;
@@ -40,14 +65,38 @@ interface IForm extends  IPassenger{
     returnDate: string;
 }
 
+interface ITravelerContact {
+    emailAddress: string;
+    phones: {
+        deviceType: string;
+        contryCallingCode?: string;
+        number: string;
+    }[];
+}
+
+interface ITravelerForm {
+    id: string;
+    dateOfBirth: string;
+    name: {
+        firstName: string;
+        lastName: string;
+    };
+    gender: string;
+    contact?: ITravelerContact;
+}
+
 export default function Flight(props: any) {
     const [type, setType] = useState(props.type);
     const [page, setPage] = React.useState(1);
     const [state, setState] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
+    const [passengerDetails, setPassengerDetails] = React.useState<IPassengerPrice[]>([]);
     const [flightOffer, setFlightOffer] = React.useState<any>();
     const [flightOffers, setFlightOffers] = React.useState<IPassenger[]>([]);
-    const [filters, { data, isLoading, isSuccess, isError, error }] = useGetFlightOffersMutation();
-    const [getAirportDetails, fetchedAirportDetails] = useGetAirportDetailsMutation();
+    const [travelers, setTravelers] = React.useState<ITravelerForm[]>([]);
+    const [selected, setSelected] = React.useState<number>();
+    const [filters, { data, isLoading }] = useGetFlightOffersMutation();
+    const [getFlightOfferPrice, fetchedFlightOfferPrice] = useGetFlightOfferPriceMutation();
 
     useEffect(() => {
         if(props && Object.keys(props).length > 0 && !props.originDestinations) {
@@ -61,8 +110,6 @@ export default function Flight(props: any) {
                 infants: props.infants * 1,
                 travelClass: props.travelClass,
             });
-        } else {
-            const originDestinations = JSON.parse(props.originDestinations);
         }
     }, []);
 
@@ -74,18 +121,45 @@ export default function Flight(props: any) {
     }, [data, page]);
 
     useEffect(() => {
-        const { data, isLoading } = fetchedAirportDetails;
+        const { data, isLoading } = fetchedFlightOfferPrice;
         if(data && !isLoading) {
+            let passengers: IPassengerPrice[] = [];
+            data.flightOfferPrice.data.flightOffers[0].travelerPricings.forEach((traveler: any) => {
+                let passenger = passengers.filter((passenger: IPassengerPrice, index: number) => passenger.type === traveler.travelerType);
+                if(!passenger.length) {
+                    const newPassenger: IPassengerPrice = {
+                        type: traveler.travelerType,
+                        size: 1,
+                        base: traveler.price.base,
+                        total: traveler.price.total,
+                    };
+                    passengers.push(newPassenger);
+                } else {
+                    const newPassenger: IPassengerPrice = {...passenger[0], size: (passenger[0].size + 1)};
+                    passengers = passengers.map((passenger: IPassengerPrice, index: number) => passenger.type === traveler.travelerType ? newPassenger : passenger);
+                }
+            })
+            setPassengerDetails(passengers);
+            setFlightOffer(data.flightOfferPrice.data.flightOffers[0]);
             setState(true);
         }
-    }, [fetchedAirportDetails]);
+    }, [fetchedFlightOfferPrice]);
+
+    const handleClickOpen = () => {
+
+        setOpen(true);
+    };
+
+    const handleClose = () => {
+        setOpen(false);
+    };
 
     const handleChange = (event: React.ChangeEvent<unknown>, value: number) => {
         setPage(value);
     };
 
     const toggleDrawer =
-        (open: boolean, item: any) =>
+        (open: boolean, item: any, index: number) =>
             (event: React.KeyboardEvent | React.MouseEvent) => {
                 if (
                     event.type === 'keydown' &&
@@ -102,24 +176,18 @@ export default function Flight(props: any) {
                             if(!iataCodes.includes(segment.arrival.iataCode)) iataCodes.push(segment.arrival.iataCode);
                         })
                     });
-
-                    getAirportDetails({ iataCodes });
+                    setSelected(index);
+                    getFlightOfferPrice({ iataCodes, offer: item });
                 } else {
                     setState(false);
                 }
-                setFlightOffer(item);
             };
 
     const slice = (items: any, currentPage: number) => {
-        const startIndex = (currentPage - 1) * 20;
-        const endIndex = startIndex + 20;
+        const startIndex: number = (currentPage - 1) * 20;
+        const endIndex: number = startIndex + 20;
         return items.slice(startIndex, endIndex);
     };
-
-    const baggageAllowance = () => {
-
-    }
-
 
     return (
         <AuthenticatedLayout
@@ -199,7 +267,7 @@ export default function Flight(props: any) {
                                             <Typography variant="body2" sx={{ fontSize: '2rem', fontWeight: 'bold!important', textAlign: 'center', color: '#f2007d'}}>
                                                 £{item.price.total}
                                             </Typography>
-                                            <Button variant="contained" onClick={toggleDrawer(true, item)} fullWidth sx={{ marginTop: '2rem' }}>View Detail</Button>
+                                            <LoadingButton loading={i === selected ? fetchedFlightOfferPrice.isLoading : false} loadingPosition="start" variant="contained" onClick={toggleDrawer(true, item, i)} fullWidth sx={{ marginTop: '2rem' }}>View Detail</LoadingButton>
                                         </Grid>
                                     </Grid>
                                 </Card>
@@ -211,7 +279,7 @@ export default function Flight(props: any) {
                             <Drawer
                                 anchor="right"
                                 open={state}
-                                onClose={toggleDrawer(false, null)}
+                                onClose={toggleDrawer(false, null, -1)}
                                 sx={{
                                     position: 'relative',
                                     backgroundColor: '#F7F7F8',
@@ -220,8 +288,13 @@ export default function Flight(props: any) {
                                     }
                                 }}
                             >
-                                <div className="tw-p-2 tw-text-right tw-sticky tw-left-0 tw-top-0 tw-shadow tw-bg-white tw-z-50">
-                                    <Button variant="contained">Select</Button>
+                                <div className="tw-flex tw-justify-between tw-items-center tw-p-2 tw-text-right tw-sticky tw-left-0 tw-top-0 tw-shadow tw-bg-white tw-z-50">
+                                    {
+                                        flightOffer && <Typography variant="body2" sx={{fontSize: 18, fontWeight: 'bold'}}>
+                                            Total Price: £{ flightOffer.price.total }
+                                        </Typography>
+                                    }
+                                    <Button variant="contained" onClick={handleClickOpen}>Select</Button>
                                 </div>
                                 <div className="tw-h-full tw-px-6 tw-py-4">
                                     {
@@ -233,8 +306,8 @@ export default function Flight(props: any) {
                                                             key={i}
                                                             departure={segment.departure}
                                                             arrival={segment.arrival}
-                                                            departureAirport={fetchedAirportDetails.data && (fetchedAirportDetails.data.filter((detail: any) => detail.iata_code === segment.departure.iataCode).length ? fetchedAirportDetails.data.filter((detail: any) => detail.iata_code === segment.departure.iataCode)[0].name : segment.departure.iataCode)}
-                                                            arrivalAirport={fetchedAirportDetails.data && (fetchedAirportDetails.data.filter((detail: any) => detail.iata_code === segment.arrival.iataCode).length ? fetchedAirportDetails.data.filter((detail: any) => detail.iata_code === segment.arrival.iataCode)[0].name : segment.arrival.iataCode)}
+                                                            departureAirport={fetchedFlightOfferPrice.data && fetchedFlightOfferPrice.data.details && (fetchedFlightOfferPrice.data.details.filter((detail: any) => detail.iata_code === segment.departure.iataCode).length ? fetchedFlightOfferPrice.data.details.filter((detail: any) => detail.iata_code === segment.departure.iataCode)[0].name : segment.departure.iataCode)}
+                                                            arrivalAirport={fetchedFlightOfferPrice.data && fetchedFlightOfferPrice.data.details && (fetchedFlightOfferPrice.data.details.filter((detail: any) => detail.iata_code === segment.arrival.iataCode).length ? fetchedFlightOfferPrice.data.details.filter((detail: any) => detail.iata_code === segment.arrival.iataCode)[0].name : segment.arrival.iataCode)}
                                                             nextArrival={i !== (itinerary.segments.length - 1) ? itinerary.segments[i + 1].departure : null}
                                                         />
                                                     )
@@ -244,21 +317,24 @@ export default function Flight(props: any) {
                                             </div>
                                         )
                                     }
-                                    <div className="tw-p-4 tw-mt-8" style={{border: '1px solid #d9d9de', borderRadius: 8}}>
-                                        <Typography variant="h6" className="tw-font-bold" sx={{ fontSize: 16, marginBottom: '16px' }}>
+                                    <div className="tw-p-4 tw-mt-8"
+                                         style={{border: '1px solid #d9d9de', borderRadius: 8}}>
+                                        <Typography variant="h6" className="tw-font-bold"
+                                                    sx={{fontSize: 16, marginBottom: '16px'}}>
                                             Baggage Allowance
                                         </Typography>
                                         <Grid container alignItems="center" justifyContent="space-between" spacing={2}>
                                             <Grid size="auto">
                                                 <Grid container alignItems="center" spacing={2}>
                                                     <Grid size="auto">
-                                                        <BackpackIcon />
+                                                        <BackpackIcon/>
                                                     </Grid>
                                                     <Grid size="auto">
                                                         <Typography variant="body2" color="textSecondary">
                                                             Small Bag
                                                         </Typography>
-                                                        <Typography variant="body2" color="textSecondary" sx={{ fontSize: 14 }}>
+                                                        <Typography variant="body2" color="textSecondary"
+                                                                    sx={{fontSize: 14}}>
                                                             Must fit under the seat in front
                                                         </Typography>
                                                     </Grid>
@@ -270,17 +346,19 @@ export default function Flight(props: any) {
                                                 </Typography>
                                             </Grid>
                                         </Grid>
-                                        <Grid container alignItems="center" justifyContent="space-between" spacing={2} className="tw-mt-2">
+                                        <Grid container alignItems="center" justifyContent="space-between" spacing={2}
+                                              className="tw-mt-2">
                                             <Grid size="auto">
                                                 <Grid container alignItems="center" spacing={2}>
                                                     <Grid size="auto">
-                                                        <BackpackIcon />
+                                                        <BackpackIcon/>
                                                     </Grid>
                                                     <Grid size="auto">
                                                         <Typography variant="body2" color="textSecondary">
                                                             Cabin Bag
                                                         </Typography>
-                                                        <Typography variant="body2" color="textSecondary" sx={{ fontSize: 14 }}>
+                                                        <Typography variant="body2" color="textSecondary"
+                                                                    sx={{fontSize: 14}}>
                                                             Fits in overhead storage
                                                         </Typography>
                                                     </Grid>
@@ -292,17 +370,19 @@ export default function Flight(props: any) {
                                                 </Typography>
                                             </Grid>
                                         </Grid>
-                                        <Grid container alignItems="center" justifyContent="space-between" spacing={2} className="tw-mt-2">
+                                        <Grid container alignItems="center" justifyContent="space-between" spacing={2}
+                                              className="tw-mt-2">
                                             <Grid size="auto">
                                                 <Grid container alignItems="center" spacing={2}>
                                                     <Grid size="auto">
-                                                        <LuggageIcon />
+                                                        <LuggageIcon/>
                                                     </Grid>
                                                     <Grid size="auto">
                                                         <Typography variant="body2" color="textSecondary">
                                                             Checked luggage
                                                         </Typography>
-                                                        <Typography variant="body2" color="textSecondary" sx={{ fontSize: 14 }}>
+                                                        <Typography variant="body2" color="textSecondary"
+                                                                    sx={{fontSize: 14}}>
                                                             1 item per adult
                                                         </Typography>
                                                     </Grid>
@@ -315,8 +395,136 @@ export default function Flight(props: any) {
                                             </Grid>
                                         </Grid>
                                     </div>
+                                    <div className="tw-p-4 tw-mt-8"
+                                         style={{border: '1px solid #d9d9de', borderRadius: 8}}>
+                                        <Grid container spacing={2}>
+                                            {
+                                                passengerDetails.length && passengerDetails.map((passengerDetail: IPassengerPrice, index: number) =>
+                                                    <Grid size={4} key={index}>
+                                                        <Typography variant="h6" className="tw-font-bold"
+                                                                    sx={{fontSize: 16, marginBottom: '16px'}}>
+                                                            { `${passengerDetail.type} X ${passengerDetail.size}` }
+                                                        </Typography>
+                                                        <Typography variant="h6" className="tw-font-bold"
+                                                                    sx={{fontSize: 14, marginBottom: '16px'}}>
+                                                            { `Base Price: £${passengerDetail.base}` }
+                                                        </Typography>
+                                                        <Typography variant="h6" className="tw-font-bold"
+                                                                    sx={{fontSize: 14}}>
+                                                            { `Total Price: £${passengerDetail.total}` }
+                                                        </Typography>
+                                                    </Grid>
+                                                )
+                                            }
+                                        </Grid>
+
+                                    </div>
                                 </div>
                             </Drawer>
+                            <Dialog
+                                open={open}
+                                onClose={handleClose}
+                                aria-labelledby="alert-dialog-title"
+                                aria-describedby="alert-dialog-description"
+                                maxWidth="xl"
+                                sx={{ '& .css-pdteti-MuiPaper-root-MuiDialog-paper': {backgroundColor: '#f3f3f3' } }}
+                            >
+                                <DialogTitle id="alert-dialog-title">
+                                    Check Out
+                                </DialogTitle>
+                                <DialogContent>
+                                    <DialogContentText id="alert-dialog-description">
+                                        {
+                                            passengerDetails.length > 0 && passengerDetails.map((passengerDetail: IPassengerPrice, index: number) =>
+                                                <Accordion key={index} defaultExpanded={passengerDetail.type === 'ADULT'}>
+                                                    <AccordionSummary
+                                                        expandIcon={<ExpandMoreIcon />}
+                                                        aria-controls="panel1-content"
+                                                        id="panel1-header"
+                                                    >
+                                                        { passengerDetail.type }
+                                                    </AccordionSummary>
+                                                    <AccordionDetails>
+                                                        {
+                                                            Array.from({ length: passengerDetail.size }, (_, index) => index).map((_, index: number) =>
+                                                                <Grid container alignItems="center" key={index} spacing={2} className="tw-mt-1">
+                                                                    <Grid size={3}>
+                                                                        <FormControl fullWidth>
+                                                                            <TextField id={`${passengerDetail.type}-${index}-firstname`} label="First Name*" variant="outlined" />
+                                                                        </FormControl>
+                                                                    </Grid>
+                                                                    <Grid size={3}>
+                                                                        <FormControl fullWidth>
+                                                                            <TextField id={`${passengerDetail.type}-${index}-lastname`} label="Last Name*" variant="outlined" />
+                                                                        </FormControl>
+                                                                    </Grid>
+                                                                    <Grid size={3}>
+                                                                        <FormControl fullWidth>
+                                                                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                                                                <DemoContainer components={['DatePicker']} sx={{ pt: 0, overflow: 'unset', "& .css-1b1fjlj-MuiFormControl-root-MuiTextField-root": { minWidth: 'auto!important', width: "100%" } }}>
+                                                                                    <DatePicker label="Birthday*" format="YYYY-MM-DD" />
+                                                                                </DemoContainer>
+                                                                            </LocalizationProvider>
+                                                                        </FormControl>
+                                                                    </Grid>
+                                                                    <Grid size={3}>
+                                                                        <FormControl fullWidth>
+                                                                            <InputLabel id="demo-simple-select-label">Gender</InputLabel>
+                                                                            <Select
+                                                                                labelId="demo-simple-select-label"
+                                                                                id={`${passengerDetail.type}-${index}-gender`}
+                                                                                label="Gender*"
+                                                                                // onChange={handleChange}
+                                                                            >
+                                                                                <MenuItem value="MALE">MALE</MenuItem>
+                                                                                <MenuItem value="FEMALE">FEMALE</MenuItem>
+                                                                            </Select>
+                                                                        </FormControl>
+                                                                    </Grid>
+                                                                </Grid>
+                                                            )
+                                                        }
+                                                        {
+                                                            passengerDetail.type === 'ADULT' &&
+                                                                <React.Fragment>
+                                                                    <Divider variant="inset" component="div" sx={{ margin: '0.75rem 0px' }}>Contact</Divider>
+                                                                    <Grid container rowGap={1} spacing={2}>
+                                                                        <Grid size={12}>
+                                                                            <FormControl fullWidth>
+                                                                                <TextField id={`${passengerDetail.type}-${index}-email`} label="Email*" variant="outlined" />
+                                                                            </FormControl>
+                                                                        </Grid>
+                                                                        <Grid size={4}>
+                                                                            <FormControl fullWidth>
+                                                                                <TextField id={`${passengerDetail.type}-${index}-devicetype`} label="DeviceType*" variant="outlined" />
+                                                                            </FormControl>
+                                                                        </Grid>
+                                                                        <Grid size={4}>
+                                                                            <FormControl fullWidth>
+                                                                                <TextField id={`${passengerDetail.type}-${index}-countryCallingCode`} label="CountryCallingCode*" variant="outlined" />
+                                                                            </FormControl>
+                                                                        </Grid>
+                                                                        <Grid size={4}>
+                                                                            <FormControl fullWidth>
+                                                                                <TextField id={`${passengerDetail.type}-${index}-number`} label="Number*" variant="outlined" />
+                                                                            </FormControl>
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                </React.Fragment>
+                                                        }
+                                                    </AccordionDetails>
+                                                </Accordion>
+                                            )
+                                        }
+                                    </DialogContentText>
+                                </DialogContent>
+                                <DialogActions>
+                                    <Button variant="contained" onClick={handleClose} autoFocus>
+                                        Check Out
+                                    </Button>
+                                    <Button variant="contained" color="error" onClick={handleClose}>Cancel</Button>
+                                </DialogActions>
+                            </Dialog>
                         </List>
                 }
             </div>

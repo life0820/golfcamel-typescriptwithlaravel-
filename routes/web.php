@@ -33,7 +33,7 @@ Route::prefix('flight')->group(function () {
     Route::get('/result', [FlightController::class, 'result'])->name('flight.result');
     Route::get('/getAirports/{keyword}', [FlightController::class, 'searchAirports'])->name('flight.getAirports');
     Route::post('/search-flight-offers', [FlightController::class, 'searchFlightOffers'])->name('flight.search');
-    Route::post('/get-airport-details', [FlightController::class, 'getAirportDetails'])->name('flight.getAirportDetails');
+    Route::post('/get-flight-offer-price', [FlightController::class, 'getFlightOfferPrice'])->name('flight.getFlightOfferPrice');
 });
 
 require __DIR__.'/auth.php';
