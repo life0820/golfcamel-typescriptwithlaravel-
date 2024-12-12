@@ -90,15 +90,17 @@ export default function AuthenticatedLayout({ header, children, window }: Props)
                     <ListItemText>Profile</ListItemText>
                 </MenuItem>
             </Link>
-            <MenuItem onClick={handleMenuClose}>
-                <ListItemIcon>
-                    <AddShoppingCartRoundedIcon />
-                </ListItemIcon>
-                <ListItemText>Cart</ListItemText>
-                <Typography variant="body2" sx={{ color: 'red' }}>
-                    4
-                </Typography>
-            </MenuItem>
+            <Link href={route('cart.index')} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <MenuItem onClick={handleMenuClose}>
+                    <ListItemIcon>
+                        <AddShoppingCartRoundedIcon />
+                    </ListItemIcon>
+                    <ListItemText>Cart</ListItemText>
+                    <Typography variant="body2" sx={{ color: 'red' }}>
+                        4
+                    </Typography>
+                </MenuItem>
+            </Link>
             <Link href={route('logout')} method="post" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <MenuItem onClick={handleMenuClose}>
                     <ListItemIcon>

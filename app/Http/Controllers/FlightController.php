@@ -1,9 +1,11 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Cart;
 use App\Models\TestTable;
 use App\Models\AirportLookup;
 use App\Services\AmadeusService;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use App\Http\Requests\FlightRequest;
 use Inertia\Inertia;
@@ -25,11 +27,11 @@ class FlightController extends Controller
     public function searchFlightOffers(FlightRequest $request) {
         $data = $request->all();
 
-//        $flightLists = $this->amadeusService->searchFlights($data);
-       $data = TestTable::where('id', 4)->first();
+        $flightLists = $this->amadeusService->searchFlights($data);
+//       $data = TestTable::where('id', 3)->first();
 //        TestTable::insert(['data' => serialize(array_slice($flightLists['data'], 0, 1))]);
-//        return response()->json($flightLists['data']);
-         return response()->json(unserialize($data['data']));
+        return response()->json($flightLists['data']);
+//         return response()->json(unserialize($data['data']));
     }
 
     public function getFlightOfferPrice(Request $request)
@@ -58,6 +60,19 @@ class FlightController extends Controller
         $params = $request->query->all();
 
         return Inertia::render('Flight', $params);
+    }
+
+    public function saveFlightOfferToCart(Request $request)
+    {
+        $data = $request->all();
+
+        Cart::insert(array(
+            "type" => 'flight',
+            "contact_info" => serialize($data['travelers']),
+            "data" => serialize($data['flightOffer'])
+        ));
+
+        return response()->json([]);
     }
 
 }

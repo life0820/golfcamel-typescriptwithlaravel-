@@ -29,7 +29,11 @@ import {ReturnForm} from "@/Components/Flight/ReturnForm";
 import {OnewayForm} from "@/Components/Flight/OnewayForm";
 import {MulticityForm} from "@/Components/Flight/Multicity";
 import { Skeleton } from "@/Components/Skeleton";
-import {useGetFlightOffersMutation, useGetFlightOfferPriceMutation} from "@/toolkit/services/flight";
+import {
+    useGetFlightOffersMutation,
+    useGetFlightOfferPriceMutation,
+    useSaveFlightOfferToCartMutation
+} from "@/toolkit/services/flight";
 import Grid from "@mui/material/Grid2";
 import LoadingButton from '@mui/lab/LoadingButton';
 import {Segment} from "@/Components/Flight/Segment";
@@ -69,20 +73,19 @@ interface ITravelerContact {
     emailAddress: string;
     phones: {
         deviceType: string;
-        contryCallingCode?: string;
+        countryCallingCode: string;
         number: string;
     }[];
 }
 
 interface ITravelerForm {
-    id: string;
+    id?: string;
     dateOfBirth: string;
     name: {
         firstName: string;
         lastName: string;
     };
     gender: string;
-    contact?: ITravelerContact;
 }
 
 export default function Flight(props: any) {
@@ -94,9 +97,19 @@ export default function Flight(props: any) {
     const [flightOffer, setFlightOffer] = React.useState<any>();
     const [flightOffers, setFlightOffers] = React.useState<IPassenger[]>([]);
     const [travelers, setTravelers] = React.useState<ITravelerForm[]>([]);
+    const [contact, setContact] = React.useState<ITravelerContact>({
+        emailAddress: '',
+        phones: [{
+            deviceType: '',
+            countryCallingCode: '',
+            number: '',
+        }]
+    });
     const [selected, setSelected] = React.useState<number>();
+    const [selectedFlightOffer, setSelectedFlightOffer] = React.useState();
     const [filters, { data, isLoading }] = useGetFlightOffersMutation();
     const [getFlightOfferPrice, fetchedFlightOfferPrice] = useGetFlightOfferPriceMutation();
+    const [saveFlightOfferToCart, savedFlightOfferToCart] = useSaveFlightOfferToCartMutation();
 
     useEffect(() => {
         if(props && Object.keys(props).length > 0 && !props.originDestinations) {
@@ -145,14 +158,42 @@ export default function Flight(props: any) {
         }
     }, [fetchedFlightOfferPrice]);
 
-    const handleClickOpen = () => {
+    useEffect(() => {
+        if(savedFlightOfferToCart.isSuccess) {
+            setOpen(false);
+        }
+    }, [savedFlightOfferToCart]);
 
+    const handleClickOpen = () => {
+        let travelerContacts: ITravelerForm[] = [];
+        passengerDetails.forEach((passenger: IPassengerPrice) => {
+            Array.from({ length: passenger.size }, (_, i: number) => {
+                travelerContacts.push({
+                    dateOfBirth: '',
+                    name: {
+                        firstName: '',
+                        lastName: '',
+                    },
+                    gender: '',
+                });
+            })
+        });
+        setTravelers(travelerContacts);
         setOpen(true);
     };
 
     const handleClose = () => {
         setOpen(false);
     };
+
+    const handleCheckout = () => {
+        const newTravelers: any = travelers;
+        newTravelers[0]['contact'] = contact;
+        saveFlightOfferToCart({
+            flightOffer: selectedFlightOffer,
+            travelers: newTravelers
+        });
+    }
 
     const handleChange = (event: React.ChangeEvent<unknown>, value: number) => {
         setPage(value);
@@ -177,6 +218,7 @@ export default function Flight(props: any) {
                         })
                     });
                     setSelected(index);
+                    setSelectedFlightOffer(item);
                     getFlightOfferPrice({ iataCodes, offer: item });
                 } else {
                     setState(false);
@@ -188,6 +230,66 @@ export default function Flight(props: any) {
         const endIndex: number = startIndex + 20;
         return items.slice(startIndex, endIndex);
     };
+
+    const handleOrderInfoChange = (idx: number, type: string) => (e: any) => {
+        const key: string = e.target ? e.target.name : 'dateOfBirth';
+        const val: string = e.target ? e.target.value : moment(e['$d']).format('YYYY-MM-DD');
+        const index: number = type === 'ADULT' ? idx : ( type === 'CHILD' ? (idx + passengerDetails[0].size) : (idx + passengerDetails[0].size + passengerDetails[1].size) );
+        let newTravelers: ITravelerForm[] = [];
+        newTravelers = travelers.map((traveler: ITravelerForm, i: number) => {
+            if(i === index) {
+                if( key === 'firstName' || key === 'lastName') {
+                    return { ...traveler, name: { ...traveler.name, [key]: val } };
+                } else {
+                    return { ...traveler, [key]: val }
+                }
+            } else {
+                return traveler;
+            }
+        });
+        setTravelers(newTravelers);
+    }
+
+    const handleContactInfoChange = (e: any) => {
+        if(e.target.name !== 'emailAddress') {
+            let phones: ITravelerContact['phones'] = contact.phones;
+            type Phone = ITravelerContact['phones'][number];
+            phones[0][e.target.name as keyof Phone] = e.target.value;
+            setContact({
+                ...contact,
+                phones
+            });
+        } else {
+            setContact({
+                ...contact,
+                [e.target.name]: e.target.value,
+            })
+        }
+    }
+
+    const checkValidation = () => {
+        for (const traveler of travelers) {
+            for (const item in traveler) {
+                if(typeof traveler[item as keyof ITravelerForm] === 'string') {
+                    if(!traveler[item as keyof ITravelerForm]) return true;
+                } else {
+                    for (const item1 in traveler[item as keyof ITravelerForm] as ITravelerForm['name']) {
+                        if(!(traveler[item as keyof ITravelerForm] as ITravelerForm['name'])[item1 as keyof ITravelerForm['name']]) return true;
+                    }
+                }
+            }
+        }
+        for (const item in contact) {
+            if(typeof contact[item as keyof ITravelerContact] === 'string') {
+                if(!contact[item as keyof ITravelerContact]) return true;
+            } else {
+                for (const item1 in contact[item as keyof ITravelerContact][0] as ITravelerContact['phones'][0]) {
+                    if(!(contact[item as keyof ITravelerContact][0] as ITravelerContact['phones'][0])[item1 as keyof ITravelerContact['phones'][0]]) return true;
+                }
+            }
+        }
+        return false;
+    }
 
     return (
         <AuthenticatedLayout
@@ -267,7 +369,7 @@ export default function Flight(props: any) {
                                             <Typography variant="body2" sx={{ fontSize: '2rem', fontWeight: 'bold!important', textAlign: 'center', color: '#f2007d'}}>
                                                 £{item.price.total}
                                             </Typography>
-                                            <LoadingButton loading={i === selected ? fetchedFlightOfferPrice.isLoading : false} loadingPosition="start" variant="contained" onClick={toggleDrawer(true, item, i)} fullWidth sx={{ marginTop: '2rem' }}>View Detail</LoadingButton>
+                                            <LoadingButton loading={i === selected ? fetchedFlightOfferPrice.isLoading : false} variant="contained" onClick={toggleDrawer(true, item, i)} fullWidth sx={{ marginTop: '2rem' }}>View Detail</LoadingButton>
                                         </Grid>
                                     </Grid>
                                 </Card>
@@ -450,19 +552,19 @@ export default function Flight(props: any) {
                                                                 <Grid container alignItems="center" key={index} spacing={2} className="tw-mt-1">
                                                                     <Grid size={3}>
                                                                         <FormControl fullWidth>
-                                                                            <TextField id={`${passengerDetail.type}-${index}-firstname`} label="First Name*" variant="outlined" />
+                                                                            <TextField id={`${passengerDetail.type}-${index}-firstname`} label="First Name*" variant="outlined" name="firstName" onChange={handleOrderInfoChange(index, passengerDetail.type)} />
                                                                         </FormControl>
                                                                     </Grid>
                                                                     <Grid size={3}>
                                                                         <FormControl fullWidth>
-                                                                            <TextField id={`${passengerDetail.type}-${index}-lastname`} label="Last Name*" variant="outlined" />
+                                                                            <TextField id={`${passengerDetail.type}-${index}-lastname`} label="Last Name*" name="lastName" variant="outlined" onChange={handleOrderInfoChange(index, passengerDetail.type)} />
                                                                         </FormControl>
                                                                     </Grid>
                                                                     <Grid size={3}>
                                                                         <FormControl fullWidth>
                                                                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                                                                 <DemoContainer components={['DatePicker']} sx={{ pt: 0, overflow: 'unset', "& .css-1b1fjlj-MuiFormControl-root-MuiTextField-root": { minWidth: 'auto!important', width: "100%" } }}>
-                                                                                    <DatePicker label="Birthday*" format="YYYY-MM-DD" />
+                                                                                    <DatePicker label="Birthday*" format="YYYY-MM-DD" onChange={handleOrderInfoChange(index, passengerDetail.type)} />
                                                                                 </DemoContainer>
                                                                             </LocalizationProvider>
                                                                         </FormControl>
@@ -474,7 +576,8 @@ export default function Flight(props: any) {
                                                                                 labelId="demo-simple-select-label"
                                                                                 id={`${passengerDetail.type}-${index}-gender`}
                                                                                 label="Gender*"
-                                                                                // onChange={handleChange}
+                                                                                name="gender"
+                                                                                onChange={handleOrderInfoChange(index, passengerDetail.type)}
                                                                             >
                                                                                 <MenuItem value="MALE">MALE</MenuItem>
                                                                                 <MenuItem value="FEMALE">FEMALE</MenuItem>
@@ -487,26 +590,26 @@ export default function Flight(props: any) {
                                                         {
                                                             passengerDetail.type === 'ADULT' &&
                                                                 <React.Fragment>
-                                                                    <Divider variant="inset" component="div" sx={{ margin: '0.75rem 0px' }}>Contact</Divider>
+                                                                    <Divider variant="inset" sx={{ margin: '0.75rem 0px' }}>Contact</Divider>
                                                                     <Grid container rowGap={1} spacing={2}>
                                                                         <Grid size={12}>
                                                                             <FormControl fullWidth>
-                                                                                <TextField id={`${passengerDetail.type}-${index}-email`} label="Email*" variant="outlined" />
+                                                                                <TextField id={`${passengerDetail.type}-${index}-email`} label="Email*" variant="outlined" name="emailAddress" onChange={handleContactInfoChange} />
                                                                             </FormControl>
                                                                         </Grid>
                                                                         <Grid size={4}>
                                                                             <FormControl fullWidth>
-                                                                                <TextField id={`${passengerDetail.type}-${index}-devicetype`} label="DeviceType*" variant="outlined" />
+                                                                                <TextField id={`${passengerDetail.type}-${index}-devicetype`} label="DeviceType*" variant="outlined" name="deviceType" onChange={handleContactInfoChange} />
                                                                             </FormControl>
                                                                         </Grid>
                                                                         <Grid size={4}>
                                                                             <FormControl fullWidth>
-                                                                                <TextField id={`${passengerDetail.type}-${index}-countryCallingCode`} label="CountryCallingCode*" variant="outlined" />
+                                                                                <TextField id={`${passengerDetail.type}-${index}-countryCallingCode`} label="CountryCallingCode*" variant="outlined" name="countryCallingCode" onChange={handleContactInfoChange} />
                                                                             </FormControl>
                                                                         </Grid>
                                                                         <Grid size={4}>
                                                                             <FormControl fullWidth>
-                                                                                <TextField id={`${passengerDetail.type}-${index}-number`} label="Number*" variant="outlined" />
+                                                                                <TextField id={`${passengerDetail.type}-${index}-number`} label="Number*" variant="outlined" name="number" onChange={handleContactInfoChange} />
                                                                             </FormControl>
                                                                         </Grid>
                                                                     </Grid>
@@ -519,7 +622,7 @@ export default function Flight(props: any) {
                                     </DialogContentText>
                                 </DialogContent>
                                 <DialogActions>
-                                    <Button variant="contained" onClick={handleClose} autoFocus>
+                                    <Button disabled={checkValidation()} variant="contained" onClick={handleCheckout} autoFocus>
                                         Check Out
                                     </Button>
                                     <Button variant="contained" color="error" onClick={handleClose}>Cancel</Button>

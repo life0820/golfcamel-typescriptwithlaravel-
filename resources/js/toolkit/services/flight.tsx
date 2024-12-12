@@ -33,6 +33,19 @@ export const flightApi = createApi({
                 method: 'POST',
                 body: patch
             })
+        }),
+        saveFlightOfferToCart: builder.mutation({
+            query: ({ ...patch }) => ({
+                url: '/flight/offer/to-cart/save',
+                method: 'POST',
+                body: patch
+            })
+        }),
+        deleteCart: builder.mutation({
+            query:({ id }) => ({
+                url: `/cart/${id}`,
+                method: 'DELETE'
+            })
         })
     })
 })
@@ -41,4 +54,6 @@ export const {
     useGetAirportsQuery,
     useGetFlightOffersMutation,
     useGetFlightOfferPriceMutation,
+    useSaveFlightOfferToCartMutation,
+    useDeleteCartMutation,
 } = flightApi;
